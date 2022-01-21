@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using Delaunay;
 using Delaunay.Geo;
 using System;
@@ -9,12 +10,27 @@ public class Mapping : MonoBehaviour
 {
     public GameObject roadPrefab;
     public GameObject roadBikePrefab;
+    public GameObject roadBikeCenterPrefab;
     public GameObject buildingPrefab;
+    public GameObject holderSurfBike;
+    public GameObject holderSurfCar;
+    public GameObject holderBuildings;
+    public GameObject carPrefab;
+    public GameObject bikePrefab;
+    public GameObject policePrefab;
+    public GameObject ambulancePrefab;
+
+    GameObject[] cars;
+    GameObject[] bikes;
+    GameObject police;
+    GameObject ambulance;
 
     public Material land;
     public Texture2D tx;
     public const int NPOINTS = 50; //centre des cellules de voronoi
     public const int NBUILDINGS = 100;
+    public const int NCAR = 50;
+    public const int NBIKE = 30;
     public const int WIDTH = 200;	//résolution image
     public const int HEIGHT = 200;
 
@@ -37,6 +53,10 @@ public class Mapping : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Transform trBike = holderSurfBike.GetComponent<Transform>();
+        Transform trCar = holderSurfCar.GetComponent<Transform>();
+        Transform trBuilding = holderBuildings.GetComponent<Transform>();
+
         float[,] map = createMap();
         Color[] pixels = createPixelMap(map);
 
@@ -61,7 +81,7 @@ public class Mapping : MonoBehaviour
         }
 
         /* Generate Graphs */
-        Delaunay.Voronoi v = new Delaunay.Voronoi(m_points, colors, new Rect(0, 0, WIDTH, HEIGHT));
+        Delaunay.Voronoi v = new Delaunay.Voronoi(m_points, colors, new Rect(0, 0, WIDTH - 1, HEIGHT - 1));
         m_edges = v.VoronoiDiagram();
         m_spanningTree = v.SpanningTree(KruskalType.MINIMUM);
         m_delaunayTriangulation = v.DelaunayTriangulation();
@@ -83,15 +103,17 @@ public class Mapping : MonoBehaviour
             float angle = Mathf.Atan2(allignedVect.z, allignedVect.x) * Mathf.Rad2Deg;
             float dist = allignedVect.magnitude;
 
-            GameObject road = Instantiate(roadPrefab, realLeft, Quaternion.Euler(0, -angle, 0));
+            GameObject road = Instantiate(roadPrefab, realLeft, Quaternion.Euler(0, -angle, 0), trCar);
             road.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
 
             //Bike road next to it
             Vector3 perpendicular = Vector3.Cross(allignedVect, Vector3.up).normalized;
             perpendicular = Vector3.ClampMagnitude(perpendicular, 0.11f);
             perpendicular *= rnd.Next(2) == 0 ? 1 : -1;
-            GameObject roadBike = Instantiate(roadBikePrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0));
+            GameObject roadBike = Instantiate(roadBikePrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0), trBike);
             roadBike.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
+            GameObject roadBikeCenter = Instantiate(roadBikeCenterPrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0), trBike);
+            roadBikeCenter.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
         }
 
         //Create Buildings
@@ -128,8 +150,71 @@ public class Mapping : MonoBehaviour
             perpendicular *= rnd.Next(2) == 0 ? 1 : -1;
 
             //instantiate
-            GameObject building = Instantiate(buildingPrefab, pos + perpendicular, Quaternion.LookRotation(-perpendicular));
+            GameObject building = Instantiate(buildingPrefab, pos + perpendicular, Quaternion.LookRotation(-perpendicular), trBuilding);
             building.transform.localScale += new Vector3(0, limit - 1, 0f);
+        }
+
+        //Create surface for navigation
+        NavMeshSurface surfaceCar = holderSurfCar.GetComponent<NavMeshSurface>();
+        surfaceCar.BuildNavMesh();
+        NavMeshSurface surfaceBike = holderSurfBike.GetComponent<NavMeshSurface>();
+        surfaceBike.BuildNavMesh();
+
+        //Create agents
+        //cars
+        cars = new GameObject[NCAR];
+        for (int i = 0; i < NCAR; i++)
+        {
+            //choose start
+            LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+            Vector2 left = (Vector2)seg.p0;
+            float limit = map[(int)left.x, (int)left.y];
+            while (UnityEngine.Random.Range(0f, 1f) > limit)
+            {
+                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                left = (Vector2)seg.p0;
+                limit = map[(int)left.x, (int)left.y];
+            }
+            cars[i] = Instantiate(carPrefab, CoordMap2Plane(left), Quaternion.identity);
+            //choose direction
+            seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+            left = (Vector2)seg.p0;
+            limit = map[(int)left.x, (int)left.y];
+            while (UnityEngine.Random.Range(0f, 1f) > limit)
+            {
+                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                left = (Vector2)seg.p0;
+                limit = map[(int)left.x, (int)left.y];
+            }
+            cars[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
+        }
+
+        //bikes
+        bikes = new GameObject[NBIKE];
+        for (int i = 0; i < NBIKE; i++)
+        {
+            //choose start
+            LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+            Vector2 left = (Vector2)seg.p0;
+            float limit = map[(int)left.x, (int)left.y];
+            while (UnityEngine.Random.Range(0f, 1f) > limit)
+            {
+                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                left = (Vector2)seg.p0;
+                limit = map[(int)left.x, (int)left.y];
+            }
+            bikes[i] = Instantiate(bikePrefab, CoordMap2Plane(left), Quaternion.identity);
+            //choose direction
+            seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+            left = (Vector2)seg.p0;
+            limit = map[(int)left.x, (int)left.y];
+            while (UnityEngine.Random.Range(0f, 1f) > limit)
+            {
+                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                left = (Vector2)seg.p0;
+                limit = map[(int)left.x, (int)left.y];
+            }
+            bikes[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
         }
 
 
@@ -143,7 +228,7 @@ public class Mapping : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     Vector3 CoordMap2Plane(Vector2 vec)
