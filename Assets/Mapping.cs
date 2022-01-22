@@ -24,13 +24,14 @@ public class Mapping : MonoBehaviour
     GameObject[] bikes;
     GameObject police;
     GameObject ambulance;
+    float[,] map;
 
     public Material land;
     public Texture2D tx;
     public const int NPOINTS = 50; //centre des cellules de voronoi
     public const int NBUILDINGS = 100;
-    public const int NCAR = 50;
-    public const int NBIKE = 30;
+    public const int NCAR = 30;
+    public const int NBIKE = 15;
     public const int WIDTH = 200;	//résolution image
     public const int HEIGHT = 200;
 
@@ -57,7 +58,7 @@ public class Mapping : MonoBehaviour
         Transform trCar = holderSurfCar.GetComponent<Transform>();
         Transform trBuilding = holderBuildings.GetComponent<Transform>();
 
-        float[,] map = createMap();
+        map = createMap();
         Color[] pixels = createPixelMap(map);
 
         /* Create random points points */
@@ -108,7 +109,7 @@ public class Mapping : MonoBehaviour
 
             //Bike road next to it
             Vector3 perpendicular = Vector3.Cross(allignedVect, Vector3.up).normalized;
-            perpendicular = Vector3.ClampMagnitude(perpendicular, 0.11f);
+            perpendicular = Vector3.ClampMagnitude(perpendicular, 0.16f);
             perpendicular *= rnd.Next(2) == 0 ? 1 : -1;
             GameObject roadBike = Instantiate(roadBikePrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0), trBike);
             roadBike.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
@@ -146,7 +147,7 @@ public class Mapping : MonoBehaviour
             //which side
             Vector3 allignedVect = realRight - realLeft;
             Vector3 perpendicular = Vector3.Cross(allignedVect, Vector3.up).normalized;
-            perpendicular = Vector3.ClampMagnitude(perpendicular, 0.25f);
+            perpendicular = Vector3.ClampMagnitude(perpendicular, 0.3f);
             perpendicular *= rnd.Next(2) == 0 ? 1 : -1;
 
             //instantiate
@@ -161,6 +162,14 @@ public class Mapping : MonoBehaviour
         surfaceBike.BuildNavMesh();
 
         //Create agents
+        //police
+        Vector3 posPol = CoordMap2Plane((Vector2)m_edges[0].p0);
+        police = Instantiate(policePrefab, posPol, Quaternion.identity);
+        police.GetComponent<Police>().Init(map, m_edges, HEIGHT, WIDTH);
+        //ambulance
+        Vector3 posAmb = CoordMap2Plane((Vector2)m_edges[m_edges.Count - 1].p0);
+        ambulance = Instantiate(ambulancePrefab, posAmb, Quaternion.identity);
+        ambulance.GetComponent<Ambulance>().Init(map, m_edges, HEIGHT, WIDTH);
         //cars
         cars = new GameObject[NCAR];
         for (int i = 0; i < NCAR; i++)
@@ -187,6 +196,7 @@ public class Mapping : MonoBehaviour
                 limit = map[(int)left.x, (int)left.y];
             }
             cars[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
+            cars[i].GetComponent<Car>().Init(map, m_edges, HEIGHT, WIDTH, police);
         }
 
         //bikes
@@ -215,6 +225,7 @@ public class Mapping : MonoBehaviour
                 limit = map[(int)left.x, (int)left.y];
             }
             bikes[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
+            bikes[i].GetComponent<Bike>().Init(map, m_edges, HEIGHT, WIDTH, ambulance);
         }
 
 
@@ -228,7 +239,7 @@ public class Mapping : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        
     }
 
     Vector3 CoordMap2Plane(Vector2 vec)
