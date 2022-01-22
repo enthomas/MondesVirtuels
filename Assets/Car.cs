@@ -41,7 +41,7 @@ public class Car : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (init && !findingPath && (GetComponent<NavMeshAgent>().remainingDistance < 0.06f || GetComponent<NavMeshAgent>().isStopped || !GetComponent<NavMeshAgent>().hasPath))
+        if (init && !findingPath && (GetComponent<NavMeshAgent>().remainingDistance < 0.06f || GetComponent<NavMeshAgent>().isStopped))
         {
             findingPath = true;
             LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];

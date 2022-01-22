@@ -56,7 +56,7 @@ public class Ambulance : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log(bikes.Count);
+        //Debug.Log(bikes.Count);
         if (init && bikes.Count > 0 && GetComponent<NavMeshAgent>().destination == transform.position)
         { GetComponent<NavMeshAgent>().destination = bikes[0].transform.position; }
     }

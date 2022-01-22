@@ -14,7 +14,7 @@ NavMeshProjectSettings:
   - name: roadCar
     cost: 100
   - name: roadBike
-    cost: 100
+    cost: 30
   - name: roadBikeCenter
     cost: 1
   - name: 

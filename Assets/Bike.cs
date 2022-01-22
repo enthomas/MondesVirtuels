@@ -50,8 +50,9 @@ public class Bike : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (init && GetComponent<NavMeshAgent>().enabled && !collided && !findingPath && (GetComponent<NavMeshAgent>().remainingDistance < 0.06f || GetComponent<NavMeshAgent>().isStopped || !GetComponent<NavMeshAgent>().hasPath))
+        if (init && !collided && !findingPath && GetComponent<NavMeshAgent>().remainingDistance < 0.06f)
         {
+            findingPath = true;
             LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
             Vector2 left = (Vector2)seg.p0;
             float limit = map[(int)left.x, (int)left.y];
