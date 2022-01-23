@@ -113,8 +113,8 @@ public class Mapping : MonoBehaviour
             perpendicular *= rnd.Next(2) == 0 ? 1 : -1;
             GameObject roadBike = Instantiate(roadBikePrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0), trBike);
             roadBike.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
-            GameObject roadBikeCenter = Instantiate(roadBikeCenterPrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0), trBike);
-            roadBikeCenter.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
+            //GameObject roadBikeCenter = Instantiate(roadBikeCenterPrefab, realLeft + perpendicular, Quaternion.Euler(0, -angle, 0), trBike);
+            //roadBikeCenter.transform.localScale += new Vector3(dist * 10 - 1, 0f, 0f);
         }
 
         //Create Buildings
@@ -161,72 +161,7 @@ public class Mapping : MonoBehaviour
         NavMeshSurface surfaceBike = holderSurfBike.GetComponent<NavMeshSurface>();
         surfaceBike.BuildNavMesh();
 
-        //Create agents
-        //police
-        Vector3 posPol = CoordMap2Plane((Vector2)m_edges[0].p0);
-        police = Instantiate(policePrefab, posPol, Quaternion.identity);
-        police.GetComponent<Police>().Init(map, m_edges, HEIGHT, WIDTH);
-        //ambulance
-        Vector3 posAmb = CoordMap2Plane((Vector2)m_edges[m_edges.Count - 1].p0);
-        ambulance = Instantiate(ambulancePrefab, posAmb, Quaternion.identity);
-        ambulance.GetComponent<Ambulance>().Init(map, m_edges, HEIGHT, WIDTH);
-        //cars
-        cars = new GameObject[NCAR];
-        for (int i = 0; i < NCAR; i++)
-        {
-            //choose start
-            LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-            Vector2 left = (Vector2)seg.p0;
-            float limit = map[(int)left.x, (int)left.y];
-            while (UnityEngine.Random.Range(0f, 1f) > limit)
-            {
-                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-                left = (Vector2)seg.p0;
-                limit = map[(int)left.x, (int)left.y];
-            }
-            cars[i] = Instantiate(carPrefab, CoordMap2Plane(left), Quaternion.identity);
-            //choose direction
-            seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-            left = (Vector2)seg.p0;
-            limit = map[(int)left.x, (int)left.y];
-            while (UnityEngine.Random.Range(0f, 1f) > limit)
-            {
-                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-                left = (Vector2)seg.p0;
-                limit = map[(int)left.x, (int)left.y];
-            }
-            cars[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
-            cars[i].GetComponent<Car>().Init(map, m_edges, HEIGHT, WIDTH, police);
-        }
-
-        //bikes
-        bikes = new GameObject[NBIKE];
-        for (int i = 0; i < NBIKE; i++)
-        {
-            //choose start
-            LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-            Vector2 left = (Vector2)seg.p0;
-            float limit = map[(int)left.x, (int)left.y];
-            while (UnityEngine.Random.Range(0f, 1f) > limit)
-            {
-                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-                left = (Vector2)seg.p0;
-                limit = map[(int)left.x, (int)left.y];
-            }
-            bikes[i] = Instantiate(bikePrefab, CoordMap2Plane(left), Quaternion.identity);
-            //choose direction
-            seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-            left = (Vector2)seg.p0;
-            limit = map[(int)left.x, (int)left.y];
-            while (UnityEngine.Random.Range(0f, 1f) > limit)
-            {
-                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
-                left = (Vector2)seg.p0;
-                limit = map[(int)left.x, (int)left.y];
-            }
-            bikes[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
-            bikes[i].GetComponent<Bike>().Init(map, m_edges, HEIGHT, WIDTH, ambulance);
-        }
+        
 
 
         /* Apply pixels to texture */
@@ -239,7 +174,75 @@ public class Mapping : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetMouseButtonDown(0))
+        {
+            //Create agents
+            //police
+            Vector3 posPol = CoordMap2Plane((Vector2)m_edges[0].p0);
+            police = Instantiate(policePrefab, posPol, Quaternion.identity);
+            police.GetComponent<Police>().Init(map, m_edges, HEIGHT, WIDTH);
+            //ambulance
+            Vector3 posAmb = CoordMap2Plane((Vector2)m_edges[m_edges.Count - 1].p0);
+            ambulance = Instantiate(ambulancePrefab, posAmb, Quaternion.identity);
+            ambulance.GetComponent<Ambulance>().Init(map, m_edges, HEIGHT, WIDTH);
+            //cars
+            cars = new GameObject[NCAR];
+            for (int i = 0; i < NCAR; i++)
+            {
+                //choose start
+                LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                Vector2 left = (Vector2)seg.p0;
+                float limit = map[(int)left.x, (int)left.y];
+                while (UnityEngine.Random.Range(0f, 1f) > limit)
+                {
+                    seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                    left = (Vector2)seg.p0;
+                    limit = map[(int)left.x, (int)left.y];
+                }
+                cars[i] = Instantiate(carPrefab, CoordMap2Plane(left), Quaternion.identity);
+                //choose direction
+                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                left = (Vector2)seg.p0;
+                limit = map[(int)left.x, (int)left.y];
+                while (UnityEngine.Random.Range(0f, 1f) > limit)
+                {
+                    seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                    left = (Vector2)seg.p0;
+                    limit = map[(int)left.x, (int)left.y];
+                }
+                cars[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
+                cars[i].GetComponent<Car>().Init(map, m_edges, HEIGHT, WIDTH, police);
+            }
+
+            //bikes
+            bikes = new GameObject[NBIKE];
+            for (int i = 0; i < NBIKE; i++)
+            {
+                //choose start
+                LineSegment seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                Vector2 left = (Vector2)seg.p0;
+                float limit = map[(int)left.x, (int)left.y];
+                while (UnityEngine.Random.Range(0f, 1f) > limit)
+                {
+                    seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                    left = (Vector2)seg.p0;
+                    limit = map[(int)left.x, (int)left.y];
+                }
+                bikes[i] = Instantiate(bikePrefab, CoordMap2Plane(left), Quaternion.identity);
+                //choose direction
+                seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                left = (Vector2)seg.p0;
+                limit = map[(int)left.x, (int)left.y];
+                while (UnityEngine.Random.Range(0f, 1f) > limit)
+                {
+                    seg = m_edges[UnityEngine.Random.Range(0, m_edges.Count)];
+                    left = (Vector2)seg.p0;
+                    limit = map[(int)left.x, (int)left.y];
+                }
+                bikes[i].GetComponent<NavMeshAgent>().destination = CoordMap2Plane(left);
+                bikes[i].GetComponent<Bike>().Init(map, m_edges, HEIGHT, WIDTH, ambulance);
+            }
+        }
     }
 
     Vector3 CoordMap2Plane(Vector2 vec)
